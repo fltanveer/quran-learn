@@ -1,6 +1,8 @@
-// Writes out/sw.js after `next build`. Precaches every exported file so the app works offline.
+// Post-build for the static export:
+// 1. Copies Next segment prefetch files to the flat names the client requests.
+// 2. Writes out/sw.js, which precaches every exported file so the app works offline.
 import { createHash } from 'node:crypto';
-import { readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
+import { copyFileSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';
 
 const OUT = 'out';
@@ -12,7 +14,19 @@ function walk(dir: string): string[] {
   });
 }
 
-const files = walk(OUT).filter((f) => !f.endsWith('sw.js') && !f.endsWith('.map'));
+// Next 16 writes e.g. recite/1/__next.recite/$d$surah/__PAGE__.txt but the client fetches
+// recite/1/__next.recite.$d$surah.__PAGE__.txt. Static hosts need the flat copy.
+for (const f of walk(OUT)) {
+  const parts = relative(OUT, f).split(sep);
+  const i = parts.findIndex((p, k) => p.startsWith('__next.') && k < parts.length - 1);
+  if (i === -1) continue;
+  const flat = join(OUT, ...parts.slice(0, i), parts.slice(i).join('.'));
+  copyFileSync(f, flat);
+}
+
+const files = walk(OUT).filter(
+  (f) => !f.endsWith('sw.js') && !f.endsWith('.map') && !relative(OUT, f).split(sep).slice(0, -1).some((p) => p.startsWith('__next.')),
+);
 const hash = createHash('sha256');
 const urls = files.map((f) => {
   hash.update(readFileSync(f));
@@ -41,7 +55,20 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const req = event.request;
   const url = new URL(req.url);
-  if (req.method !== 'GET' || url.origin !== self.location.origin) return;
+  if (url.origin !== self.location.origin) return;
+
+  // Next checks routes with HEAD requests. Answer them from the cache when offline.
+  if (req.method === 'HEAD') {
+    event.respondWith(
+      fetch(req).catch(() =>
+        caches.match(url.pathname, { cacheName: CACHE }).then((hit) =>
+          hit ? new Response(null, { status: hit.status, headers: hit.headers }) : Response.error(),
+        ),
+      ),
+    );
+    return;
+  }
+  if (req.method !== 'GET') return;
 
   // Pages: try the cached page for this path (with or without trailing slash), then network.
   if (req.mode === 'navigate') {

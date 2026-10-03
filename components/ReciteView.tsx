@@ -43,7 +43,7 @@ export function ReciteView({ data, roots, patterns, summaries, prev, next }: Pro
   const closeSettings = useCallback(() => setSettingsOpen(false), []);
 
   return (
-    <div className="mx-auto max-w-3xl pb-32">
+    <main className="mx-auto max-w-3xl pb-32">
       <header className="sticky top-0 z-10 flex items-center justify-between border-b border-line bg-paper/95 px-4 py-3 backdrop-blur">
         <div>
           <h1 className="text-xl font-semibold">
@@ -120,7 +120,7 @@ export function ReciteView({ data, roots, patterns, summaries, prev, next }: Pro
         onClose={closeAyah}
       />
       <SettingsSheet open={settingsOpen} onClose={closeSettings} />
-    </div>
+    </main>
   );
 }
 
@@ -140,7 +140,7 @@ type RowProps = {
 function AyahRow({ ayah, fontSize, support, known, hasNote, playing, audioError, onPlay, onWord, onAyah }: RowProps) {
   const showMeaning = (w: Word) => support === 'all' || (support === 'new' && !known.has(w.ar));
   return (
-    <li id={`a-${ayah.n}`} data-ayah={ayah.n} className="scroll-mt-20 border-b border-line px-3 py-5">
+    <li id={`a-${ayah.n}`} data-ayah={ayah.n} className="scroll-mt-20 border-b border-line px-3 py-4">
       <div lang="ar" dir="rtl" className="quran flex flex-wrap items-start gap-x-3 gap-y-2" style={{ fontSize }}>
         {ayah.words.map((w) => (
           <span key={w.pos} className="inline-flex items-start gap-x-2">
@@ -148,16 +148,15 @@ function AyahRow({ ayah, fontSize, support, known, hasNote, playing, audioError,
               type="button"
               onClick={() => onWord(w)}
               className="flex flex-col items-center rounded-xl px-1 hover:bg-accent-soft focus-visible:bg-accent-soft"
-              aria-label={w.meaning_bn ? `${w.ar}: ${w.meaning_bn}` : w.ar}
             >
-              <span>
+              <span className="pb-[0.2em]">
                 <ColoredWord segments={w.segments} />
               </span>
               {showMeaning(w) && (w.meaning_bn || w.gloss_en) && (
                 <span
                   lang={w.meaning_bn ? 'bn' : 'en'}
                   dir="ltr"
-                  className="max-w-[9rem] text-center font-bangla text-sm leading-snug text-muted"
+                  className="max-w-[9rem] pb-1 text-center font-bangla text-sm leading-snug text-muted"
                 >
                   {w.meaning_bn ?? w.gloss_en}
                 </span>
@@ -170,24 +169,26 @@ function AyahRow({ ayah, fontSize, support, known, hasNote, playing, audioError,
           type="button"
           onClick={onAyah}
           className="relative rounded-full px-2 text-accent hover:bg-accent-soft"
-          aria-label={`${L.ayahNo} ${bn(ayah.n)}: ${L.tabTranslations}, ${L.tabTafsir}, ${L.tabNote}`}
         >
           ﴿{ar(ayah.n)}﴾
+          <span className="sr-only" lang="bn">
+            {L.ayahNo} {bn(ayah.n)}: {L.tabTranslations}, {L.tabTafsir}, {L.tabNote}
+          </span>
           {hasNote && <span className="absolute -top-1 left-0 h-2 w-2 rounded-full bg-root" aria-hidden="true" />}
         </button>
-      </div>
-      <div className="mt-3 flex items-center gap-3">
         <button
           type="button"
           onClick={onPlay}
-          className="flex min-h-11 items-center gap-2 rounded-full border border-line px-4 text-sm"
           aria-pressed={playing}
+          aria-label={`${playing ? L.pause : L.play}, ${L.ayahNo} ${bn(ayah.n)}`}
+          className={`flex h-11 w-11 shrink-0 items-center justify-center self-center rounded-full border font-bangla text-base ${
+            playing ? 'border-accent bg-accent text-paper' : 'border-line text-accent'
+          }`}
         >
           <span aria-hidden="true">{playing ? '❚❚' : '▶'}</span>
-          {playing ? L.pause : L.play}
         </button>
-        {audioError && <span className="text-sm text-root">{L.audioOffline}</span>}
       </div>
+      {audioError && <p className="mt-2 text-sm text-root">{L.audioOffline}</p>}
     </li>
   );
 }

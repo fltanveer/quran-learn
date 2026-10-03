@@ -51,7 +51,7 @@ export function WordCard({ ctx, onClose, roots, patterns }: Props) {
     <BottomSheet open onClose={onClose} title={`${L.surah} ${bn(ctx.surah)}, ${L.ayahNo} ${bn(ctx.ayah)}`}>
       <div className="flex flex-col gap-5">
         <div className="text-center">
-          <p lang="ar" dir="rtl" className="quran text-6xl">
+          <p lang="ar" dir="rtl" className="quran pb-3 text-6xl">
             <ColoredWord segments={word.segments} />
           </p>
           {word.meaning_bn ? (
