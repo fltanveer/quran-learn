@@ -9,6 +9,7 @@ Scope: Al-Fatiha and all of Juz Amma (78 to 114). Add more surahs in `data/scope
 
 ```bash
 npm install
+npm run data          # required after cloning: public/data is not in git (see Licenses)
 npm run download      # fetch raw sources into /raw (skips files that exist; add -- --force to refetch)
 npm run build-data    # build /public/data from /raw; fails on Tanzil/Corpus word-count mismatch
 npm run data          # both of the above
@@ -61,6 +62,8 @@ Quran, translation and tafsir text is stored exactly as downloaded.
 | Audio | EveryAyah, Mishary Alafasy 128 kbps, streamed |
 
 ## Licenses
+
+`public/data/` is generated locally and kept out of git, because some sources allow personal use only.
 
 Personal use is covered. Before deploying to a public URL: Tanzil translations are non-commercial only, and the
 Bangla classical tafsirs (and QUL / Quran.com data in general) need publisher permission to publish.
