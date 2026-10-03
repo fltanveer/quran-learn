@@ -1,0 +1,13 @@
+{
+  "_note": "Starter pattern set from the build spec. Bangla names and meanings must be reviewed by the user before release; set reviewed=true after checking.",
+  "patterns": [
+    { "id": "f1_perf", "shape_ar": "فَعَلَ", "name_bn": "অতীত কাল (ক্রিয়া, রূপ ১)", "meaning_bn": "সে করেছে", "reviewed": false },
+    { "id": "f1_impf", "shape_ar": "يَفْعَلُ", "name_bn": "বর্তমান/ভবিষ্যৎ কাল (ক্রিয়া, রূপ ১)", "meaning_bn": "সে করে / করবে", "reviewed": false },
+    { "id": "f1_active", "shape_ar": "فَاعِل", "name_bn": "কর্তাবাচক বিশেষ্য", "meaning_bn": "যে করে (কর্তা)", "reviewed": false },
+    { "id": "f1_passive", "shape_ar": "مَفْعُول", "name_bn": "কর্মবাচক বিশেষ্য", "meaning_bn": "যার উপর করা হয়েছে", "reviewed": false },
+    { "id": "f2", "shape_ar": "فَعَّلَ", "name_bn": "ক্রিয়া, রূপ ২", "meaning_bn": "জোর দিয়ে / বারবার করা", "reviewed": false },
+    { "id": "f4", "shape_ar": "أَفْعَلَ", "name_bn": "ক্রিয়া, রূপ ৪", "meaning_bn": "করানো", "reviewed": false },
+    { "id": "f10", "shape_ar": "اسْتَفْعَلَ", "name_bn": "ক্রিয়া, রূপ ১০", "meaning_bn": "চাওয়া / প্রার্থনা করা", "reviewed": false },
+    { "id": "intensive", "shape_ar": "فَعِيل / فَعَّال", "name_bn": "আধিক্যবাচক বিশেষণ", "meaning_bn": "অনেক বেশি ... (যেমন رَحِيم، غَفَّار)", "reviewed": false }
+  ]
+}

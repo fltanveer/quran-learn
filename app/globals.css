@@ -1,0 +1,88 @@
+@import 'tailwindcss';
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-arabic: var(--font-amiri-quran), 'Amiri Quran', serif;
+  --font-bangla: var(--font-hind-siliguri), 'Noto Sans Bengali', sans-serif;
+
+  --color-paper: #fbf8f1;
+  --color-ink: #1f2421;
+  --color-muted: #5b625e;
+  --color-line: #e4ddcc;
+  --color-card: #ffffff;
+  --color-accent: #0f6b4f;
+  --color-accent-soft: #e2f1ea;
+  --color-root: #b42318;
+  --color-affix: #1d5f99;
+}
+
+/* Dark palette. Values chosen to keep 4.5:1 contrast on text. */
+.dark {
+  --color-paper: #121614;
+  --color-ink: #ece8de;
+  --color-muted: #a8b0ab;
+  --color-line: #2b332f;
+  --color-card: #1a201d;
+  --color-accent: #5cc79d;
+  --color-accent-soft: #1d3329;
+  --color-root: #ff8a7a;
+  --color-affix: #8cc4ff;
+}
+
+html {
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-bangla);
+}
+
+.quran {
+  font-family: var(--font-arabic);
+  line-height: 2.1;
+  font-feature-settings: 'calt', 'liga';
+}
+
+/* Colored spans inside one Arabic word must not break letter joining. */
+.seg {
+  display: inline;
+  padding: 0;
+  margin: 0;
+}
+.seg-root {
+  color: var(--color-root);
+}
+.seg-pattern {
+  color: var(--color-ink);
+  opacity: 0.6;
+}
+.seg-affix {
+  color: var(--color-affix);
+  opacity: 0.85;
+}
+.no-color .seg-root,
+.no-color .seg-pattern,
+.no-color .seg-affix {
+  color: inherit;
+  opacity: 1;
+}
+
+@keyframes sheet-in {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+.sheet-in {
+  animation: sheet-in 180ms ease-out;
+}
+@media (prefers-reduced-motion: reduce) {
+  .sheet-in {
+    animation: none;
+  }
+}
