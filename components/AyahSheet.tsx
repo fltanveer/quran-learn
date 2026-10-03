@@ -4,30 +4,36 @@ import { useState } from 'react';
 import { BottomSheet } from './BottomSheet';
 import { TafsirLayers } from './TafsirLayers';
 import { NoteEditor } from './NoteEditor';
+import { RecitePractice } from './RecitePractice';
 import { RichText } from './RichText';
 import { useSettings } from './useSettings';
+import { useJson } from './useJson';
 import { updateSettings } from '@/lib/db';
 import { L, bn } from '@/lib/bangla-labels';
-import type { Ayah, Summary, TafsirRecord } from '@/lib/types';
+import type { Ayah, Summary, SurahFile, TafsirSource } from '@/lib/types';
 
-type Tab = 'translations' | 'tafsir' | 'note';
+export type Tab = 'translations' | 'tafsir' | 'note' | 'practice';
 
 type Props = {
   ayah: Ayah | null;
   surah: number;
-  tafsirRecords: TafsirRecord[];
   summaries: Summary[];
+  tafsirSources: TafsirSource[];
+  initialTab?: Tab;
   onClose: () => void;
 };
 
-export function AyahSheet({ ayah, surah, tafsirRecords, summaries, onClose }: Props) {
-  const [tab, setTab] = useState<Tab>('translations');
+export function AyahSheet({ ayah, surah, summaries, tafsirSources, initialTab, onClose }: Props) {
+  const [tab, setTab] = useState<Tab>(initialTab ?? 'translations');
+  const full = useJson<SurahFile>(ayah ? `/data/surah/${String(surah).padStart(3, '0')}.json` : null);
   if (!ayah) return null;
+  const fullAyah = full.data?.ayahs.find((a) => a.n === ayah.n);
 
   const tabs: { id: Tab; label: string }[] = [
     { id: 'translations', label: L.tabTranslations },
     { id: 'tafsir', label: L.tabTafsir },
     { id: 'note', label: L.tabNote },
+    { id: 'practice', label: L.tabPractice },
   ];
 
   return (
@@ -36,7 +42,7 @@ export function AyahSheet({ ayah, surah, tafsirRecords, summaries, onClose }: Pr
         {ayah.text}
       </p>
       <p className="mb-4 mt-1 text-center text-accent">{ayah.pron_bn}</p>
-      <div role="tablist" aria-label={L.tabTranslations} className="mb-4 grid grid-cols-3 gap-1 rounded-2xl bg-accent-soft p-1">
+      <div role="tablist" aria-label={L.tabTranslations} className="mb-4 grid grid-cols-4 gap-1 rounded-2xl bg-accent-soft p-1">
         {tabs.map((t) => (
           <button
             key={t.id}
@@ -55,19 +61,26 @@ export function AyahSheet({ ayah, surah, tafsirRecords, summaries, onClose }: Pr
         ))}
       </div>
       <div role="tabpanel" id={`panel-${tab}`} aria-labelledby={`tab-${tab}`}>
-        {tab === 'translations' && <Translations ayah={ayah} />}
-        {tab === 'tafsir' && (
+        {tab === 'translations' && (fullAyah ? <Translations ayah={fullAyah} /> : <Loading error={full.error} />)}
+        {tab === 'tafsir' && !full.data && <Loading error={full.error} />}
+        {tab === 'tafsir' && full.data && (
           <TafsirLayers
             surah={surah}
             ayah={ayah.n}
-            records={tafsirRecords.filter((r) => ayah.tafsir.includes(r.id))}
+            records={full.data.tafsir_records.filter((r) => ayah.tafsir.includes(r.id))}
             summaries={summaries.filter((s) => s.ayah === ayah.n)}
+            sources={tafsirSources}
           />
         )}
         {tab === 'note' && <NoteEditor surah={surah} ayah={ayah.n} />}
+        {tab === 'practice' && <RecitePractice surah={surah} ayah={ayah} />}
       </div>
     </BottomSheet>
   );
+}
+
+function Loading({ error }: { error: boolean }) {
+  return <p className="text-sm text-muted">{error ? L.loadFailed : L.loading}</p>;
 }
 
 function Translations({ ayah }: { ayah: Ayah }) {

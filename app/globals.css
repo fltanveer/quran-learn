@@ -40,6 +40,12 @@ body {
   font-family: var(--font-bangla);
 }
 
+.quran-prose {
+  font-family: var(--font-arabic);
+  direction: rtl;
+  text-align: right;
+}
+
 .quran {
   font-family: var(--font-arabic);
   line-height: 2.1;

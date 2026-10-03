@@ -3,15 +3,22 @@
 import Link from 'next/link';
 import { useCallback, useMemo, useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { db, todayKey } from '@/lib/db';
+import { db, todayKey, updateSettings } from '@/lib/db';
 import { L, bn } from '@/lib/bangla-labels';
 import { SettingsSheet } from './SettingsSheet';
+import { BottomSheet } from './BottomSheet';
+import { useSettings } from './useSettings';
 import { useKnown } from './useKnown';
 import type { SurahMeta } from '@/lib/types';
 
-type Props = { surahs: SurahMeta[]; wordForms: string[] };
+type Props = { surahs: SurahMeta[]; wordsBySurah: Record<number, string[]>; defaultSalah: number[] };
 
-export function HomeView({ surahs, wordForms }: Props) {
+export function HomeView({ surahs, wordsBySurah, defaultSalah }: Props) {
+  const { salahSurahs } = useSettings();
+  const salah = salahSurahs ?? defaultSalah;
+  const [salahOpen, setSalahOpen] = useState(false);
+  const closeSalah = useCallback(() => setSalahOpen(false), []);
+  const wordForms = useMemo(() => salah.flatMap((s) => wordsBySurah[s] ?? []), [salah, wordsBySurah]);
   const last = useLiveQuery(() => db.progress.get('last'), []);
   const known = useKnown();
   const due = useLiveQuery(() => db.cards.where('due').belowOrEqual(Date.now()).count(), []) ?? 0;
@@ -65,6 +72,9 @@ export function HomeView({ surahs, wordForms }: Props) {
         <div className="flex flex-col items-center justify-center rounded-3xl bg-card p-4 ring-1 ring-line">
           <ProgressRing pct={pct} />
           <p className="mt-2 text-center text-sm text-muted">{L.progress}</p>
+          <button type="button" onClick={() => setSalahOpen(true)} className="mt-1 min-h-10 text-sm text-accent underline-offset-4 hover:underline">
+            {L.changeSalah}
+          </button>
         </div>
         <div className="flex flex-col gap-4">
           <Link href="/review/" className="flex-1 rounded-3xl bg-card p-4 ring-1 ring-line hover:ring-accent">
@@ -147,6 +157,28 @@ export function HomeView({ surahs, wordForms }: Props) {
         </div>
       </nav>
       <SettingsSheet open={settingsOpen} onClose={closeSettings} />
+      <BottomSheet open={salahOpen} onClose={closeSalah} title={L.salahSurahs}>
+        <p className="mb-3 text-sm text-muted">{L.salahHint}</p>
+        <ul className="grid gap-1">
+          {surahs.map((s) => (
+            <li key={s.surah}>
+              <label className="flex min-h-11 items-center gap-3 rounded-xl px-2 hover:bg-accent-soft">
+                <input
+                  type="checkbox"
+                  checked={salah.includes(s.surah)}
+                  onChange={(e) =>
+                    updateSettings({
+                      salahSurahs: e.target.checked ? [...salah, s.surah].sort((a, b) => a - b) : salah.filter((x) => x !== s.surah),
+                    })
+                  }
+                />
+                <span className="flex-1">{bn(s.surah)}. {s.name_bn}</span>
+                <span lang="ar" dir="rtl" className="quran text-xl">{s.name_ar}</span>
+              </label>
+            </li>
+          ))}
+        </ul>
+      </BottomSheet>
     </main>
   );
 }

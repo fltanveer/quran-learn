@@ -24,9 +24,14 @@ for (const f of walk(OUT)) {
   copyFileSync(f, flat);
 }
 
-const files = walk(OUT).filter(
-  (f) => !f.endsWith('sw.js') && !f.endsWith('.map') && !relative(OUT, f).split(sep).slice(0, -1).some((p) => p.startsWith('__next.')),
-);
+// Classical tafsir (several MB) is not precached; the fetch handler caches each file on first open.
+const LAZY = ['data/tafsir/'];
+const files = walk(OUT).filter((f) => {
+  const rel = relative(OUT, f).split(sep);
+  if (f.endsWith('sw.js') || f.endsWith('.map')) return false;
+  if (rel.slice(0, -1).some((p) => p.startsWith('__next.'))) return false;
+  return !LAZY.some((p) => rel.join('/').startsWith(p));
+});
 const hash = createHash('sha256');
 const urls = files.map((f) => {
   hash.update(readFileSync(f));

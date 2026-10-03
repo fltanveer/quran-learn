@@ -10,7 +10,9 @@
     "dev": "next dev",
     "build": "next build && tsx scripts/build-sw.ts",
     "start": "npx serve out",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "summaries:export": "tsx scripts/summaries/export.ts",
+    "summaries:import": "tsx scripts/summaries/import.ts"
   },
   "dependencies": {
     "dexie": "^4.4.6",

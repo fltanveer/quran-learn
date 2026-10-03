@@ -5,33 +5,35 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { ColoredWord } from './ColoredWord';
 import { WordCard, type WordContext } from './WordCard';
-import { AyahSheet } from './AyahSheet';
+import { AyahSheet, type Tab } from './AyahSheet';
 import { SettingsSheet, SUPPORT_OPTIONS } from './SettingsSheet';
 import { useSettings } from './useSettings';
 import { useKnown } from './useKnown';
+import { useJson } from './useJson';
 import { useAyahAudio } from './useAudio';
 import { useStudyTimer } from './useStudyTimer';
 import { db, updateSettings, type PronLevel, type SupportLevel } from '@/lib/db';
 import { L, ar, bn } from '@/lib/bangla-labels';
-import type { Ayah, Pattern, RootEntry, Summary, SurahFile, SurahMeta, Word } from '@/lib/types';
+import type { Ayah, Pattern, RootEntry, Summary, SurahFile, SurahMeta, TafsirSource, Word } from '@/lib/types';
 
 type Props = {
   data: SurahFile;
-  roots: RootEntry[];
-  patterns: Pattern[];
   summaries: Summary[];
+  tafsirSources: TafsirSource[];
   prev?: SurahMeta;
   next?: SurahMeta;
 };
 
-export function ReciteView({ data, roots, patterns, summaries, prev, next }: Props) {
+export function ReciteView({ data, summaries, tafsirSources, prev, next }: Props) {
+  const roots = useJson<RootEntry[]>('/data/roots.json').data ?? [];
+  const patterns = useJson<Pattern[]>('/data/patterns.json').data ?? [];
   const settings = useSettings();
   const known = useKnown();
   const notes = useLiveQuery(() => db.notes.where('surah').equals(data.surah).toArray(), [data.surah]);
-  const noted = useMemo(() => new Set((notes ?? []).map((n) => n.ayah)), [notes]);
+  const noteByAyah = useMemo(() => new Map((notes ?? []).map((n) => [n.ayah, n.text])), [notes]);
 
   const [wordCtx, setWordCtx] = useState<WordContext | null>(null);
-  const [sheetAyah, setSheetAyah] = useState<Ayah | null>(null);
+  const [sheet, setSheet] = useState<{ ayah: Ayah; tab: Tab } | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const audio = useAyahAudio(data.surah);
   const timer = useStudyTimer();
@@ -39,7 +41,7 @@ export function ReciteView({ data, roots, patterns, summaries, prev, next }: Pro
   useLastPosition(data.surah);
 
   const closeWord = useCallback(() => setWordCtx(null), []);
-  const closeAyah = useCallback(() => setSheetAyah(null), []);
+  const closeAyah = useCallback(() => setSheet(null), []);
   const closeSettings = useCallback(() => setSettingsOpen(false), []);
 
   return (
@@ -61,7 +63,7 @@ export function ReciteView({ data, roots, patterns, summaries, prev, next }: Pro
         </p>
       )}
       {data.bismillah_pron_bn && settings.pron !== 'none' && (
-        <p className="text-center text-accent">{data.bismillah_pron_bn}</p>
+        <p className="mt-2 text-center text-accent">{data.bismillah_pron_bn}</p>
       )}
 
       <ol className="mt-4 flex flex-col">
@@ -73,12 +75,12 @@ export function ReciteView({ data, roots, patterns, summaries, prev, next }: Pro
             support={settings.support}
             pron={settings.pron}
             known={known}
-            hasNote={noted.has(a.n)}
+            note={noteByAyah.get(a.n)}
             playing={audio.playing === a.n}
             audioError={audio.error === a.n}
             onPlay={() => audio.toggle(a.n)}
             onWord={(word) => setWordCtx({ word, surah: data.surah, ayah: a.n })}
-            onAyah={() => setSheetAyah(a)}
+            onAyah={(tab: Tab = 'translations') => setSheet({ ayah: a, tab })}
           />
         ))}
       </ol>
@@ -117,9 +119,11 @@ export function ReciteView({ data, roots, patterns, summaries, prev, next }: Pro
 
       <WordCard ctx={wordCtx} onClose={closeWord} roots={roots} patterns={patterns} />
       <AyahSheet
-        ayah={sheetAyah}
+        key={sheet ? `${sheet.ayah.n}-${sheet.tab}` : 'none'}
+        ayah={sheet?.ayah ?? null}
+        initialTab={sheet?.tab}
+        tafsirSources={tafsirSources}
         surah={data.surah}
-        tafsirRecords={data.tafsir_records}
         summaries={summaries}
         onClose={closeAyah}
       />
@@ -134,15 +138,15 @@ type RowProps = {
   support: SupportLevel;
   pron: PronLevel;
   known: Set<string>;
-  hasNote: boolean;
+  note?: string;
   playing: boolean;
   audioError: boolean;
   onPlay: () => void;
   onWord: (w: Word) => void;
-  onAyah: () => void;
+  onAyah: (tab?: Tab) => void;
 };
 
-function AyahRow({ ayah, fontSize, support, pron, known, hasNote, playing, audioError, onPlay, onWord, onAyah }: RowProps) {
+function AyahRow({ ayah, fontSize, support, pron, known, note, playing, audioError, onPlay, onWord, onAyah }: RowProps) {
   const showMeaning = (w: Word) => support === 'all' || (support === 'new' && !known.has(w.ar));
   return (
     <li id={`a-${ayah.n}`} data-ayah={ayah.n} className="scroll-mt-20 border-b border-line px-3 py-4">
@@ -177,14 +181,14 @@ function AyahRow({ ayah, fontSize, support, pron, known, hasNote, playing, audio
         ))}
         <button
           type="button"
-          onClick={onAyah}
+          onClick={() => onAyah()}
           className="relative rounded-full px-2 text-accent hover:bg-accent-soft"
         >
           ﴿{ar(ayah.n)}﴾
           <span className="sr-only" lang="bn">
             {L.ayahNo} {bn(ayah.n)}: {L.tabTranslations}, {L.tabTafsir}, {L.tabNote}
           </span>
-          {hasNote && <span className="absolute -top-1 left-0 h-2 w-2 rounded-full bg-root" aria-hidden="true" />}
+          {note && <span className="absolute -top-1 left-0 h-2 w-2 rounded-full bg-root" aria-hidden="true" />}
         </button>
         <button
           type="button"
@@ -203,6 +207,16 @@ function AyahRow({ ayah, fontSize, support, pron, known, hasNote, playing, audio
           <span className="sr-only">{L.pron}: </span>
           {ayah.pron_bn}
         </p>
+      )}
+      {note && (
+        <button
+          type="button"
+          onClick={() => onAyah('note')}
+          className="mt-3 block w-full rounded-2xl border-s-4 border-root bg-accent-soft px-4 py-2 text-start text-sm"
+        >
+          <span className="block text-xs text-muted">{L.myNote}</span>
+          <span className="line-clamp-3 whitespace-pre-line">{note}</span>
+        </button>
       )}
       {audioError && <p className="mt-2 text-sm text-root">{L.audioOffline}</p>}
     </li>

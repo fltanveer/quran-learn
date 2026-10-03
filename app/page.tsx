@@ -1,6 +1,10 @@
 import { HomeView } from '@/components/HomeView';
-import { getAllWordForms, getSurahList } from '@/lib/data';
+import { getSalahSurahs, getSurah, getSurahList } from '@/lib/data';
 
 export default function HomePage() {
-  return <HomeView surahs={getSurahList()} wordForms={getAllWordForms()} />;
+  const surahs = getSurahList();
+  const wordsBySurah = Object.fromEntries(
+    surahs.map((s) => [s.surah, getSurah(s.surah).ayahs.flatMap((a) => a.words.map((w) => w.ar))]),
+  );
+  return <HomeView surahs={surahs} wordsBySurah={wordsBySurah} defaultSalah={getSalahSurahs()} />;
 }

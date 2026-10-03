@@ -1,0 +1,5 @@
+{
+  "_note": "Surahs built into the app. Juz Amma (78 to 114) plus Al-Fatiha by default. Add any surah numbers to extra_surahs, then run npm run data. Names for new surahs fall back to the English name until added to surah-names-bn.json.",
+  "juz_amma": true,
+  "extra_surahs": []
+}

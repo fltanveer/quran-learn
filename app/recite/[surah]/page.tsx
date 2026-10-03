@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { ReciteView } from '@/components/ReciteView';
-import { getPatterns, getRoots, getSummaries, getSurah, getSurahList } from '@/lib/data';
+import { getSummaries, getSurah, getSurahLite, getSurahList, getTafsirSources } from '@/lib/data';
 
 type Params = { surah: string };
 
@@ -22,10 +22,9 @@ export default async function RecitePage({ params }: { params: Promise<Params> }
   const idx = list.findIndex((s) => s.surah === n);
   return (
     <ReciteView
-      data={getSurah(n)}
-      roots={getRoots()}
-      patterns={getPatterns()}
+      data={getSurahLite(n)}
       summaries={getSummaries(n)}
+      tafsirSources={getTafsirSources()}
       prev={list[idx - 1]}
       next={list[idx + 1]}
     />

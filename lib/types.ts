@@ -99,6 +99,8 @@ export type SourceRecord = {
   notes?: string;
 };
 
+export type TafsirSource = { slug: string; lang: 'ar' | 'bn'; name: string; author: string; license_note: string };
+
 export type Summary = {
   ayah: number;
   tafsir_source: string;

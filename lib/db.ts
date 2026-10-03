@@ -13,6 +13,8 @@ export type Settings = {
   pron: PronLevel;
   theme: Theme;
   hiddenTranslations: string[];
+  tafsirSource: string;
+  salahSurahs: number[] | null; // null: use the default list
 };
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -22,6 +24,8 @@ export const DEFAULT_SETTINGS: Settings = {
   pron: 'ayah',
   theme: 'system',
   hiddenTranslations: [],
+  tafsirSource: 'bn_mokhtasar',
+  salahSurahs: null,
 };
 
 export type Note = { id: string; surah: number; ayah: number; text: string; updated: number };

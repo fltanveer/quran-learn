@@ -2,7 +2,7 @@
 // Fails loudly when Tanzil and Corpus word counts disagree.
 import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { OUT_DIR, RAW_DIR, SCOPED_SURAHS, pad3 } from './config';
+import { CLASSICAL_TAFSIRS, OUT_DIR, RAW_DIR, SALAH_SURAHS, SCOPED_SURAHS, pad3 } from './config';
 import { baseLetterCount, toArabic } from './buckwalter';
 import { ayahPron, wordPron } from './bangla-pron';
 import type {
@@ -16,6 +16,7 @@ import type {
   TafsirRecord,
   Translation,
   Word,
+  WordIndexEntry,
   WordRef,
 } from '../lib/types';
 
@@ -351,6 +352,7 @@ function main() {
       tafsir_records: tafsirRecords,
     };
     writeJson(`surah/${pad3(s)}.json`, file);
+    buildClassicalTafsir(s, ayahs.length);
     if (!existsSync(join(OUT_DIR, `summaries/${pad3(s)}.json`))) writeJson(`summaries/${pad3(s)}.json`, []);
 
     surahList.push({
@@ -380,9 +382,12 @@ function main() {
   });
 
   writeJson('surahs.json', surahList);
+  writeJson('word-index.json', buildWordIndex(surahList.map((x) => x.surah)));
   writeJson('roots.json', rootsOut);
   writeJson('patterns.json', patternsOut);
   writeJson('sources.json', buildSources(tanzilNotice, corpusNotice));
+  writeJson('tafsirs.json', CLASSICAL_TAFSIRS.map(({ slug, lang, name, author }) => ({ slug, lang, name, author, license_note: CLASSICAL_NOTE })));
+  writeJson('salah-surahs.json', SALAH_SURAHS.filter((x) => SCOPED_SURAHS.includes(x)));
 
   for (const w of warnings) console.warn(`warn  ${w}`);
   if (errors.length) {
@@ -391,6 +396,64 @@ function main() {
   }
   const words = surahList.reduce((a, b) => a + b.word_count, 0);
   console.log(`ok    ${surahList.length} surahs, ${words} words, ${rootsOut.length} roots`);
+}
+
+/** First occurrence of every distinct word form, with its ayah as context (for Review and Patterns). */
+function buildWordIndex(surahs: number[]): WordIndexEntry[] {
+  const seen = new Map<string, WordIndexEntry>();
+  for (const s of surahs) {
+    const f = readJson<SurahFile>(join(OUT_DIR, `surah/${pad3(s)}.json`));
+    for (const a of f.ayahs)
+      for (const w of a.words)
+        if (!seen.has(w.ar))
+          seen.set(w.ar, {
+            ar: w.ar, surah: s, ayah: a.n, pos: w.pos, meaning_bn: w.meaning_bn, gloss_en: w.gloss_en,
+            pron_bn: w.pron_bn, root: w.root, pattern_id: w.pattern_id, segments: w.segments,
+            context: a.words.map((x) => x.ar),
+          });
+  }
+  return [...seen.values()];
+}
+
+const CLASSICAL_NOTE =
+  'Quran.com / QUL (Tarteel): ব্যক্তিগত ব্যবহারের জন্য। বাংলা তাফসীর প্রকাশ করতে প্রকাশকের অনুমতি লাগবে।';
+
+/**
+ * Classical tafsir per surah, one record per ayah or ayah range. Grouped tafsirs (e.g. Ibn Kathir) give one
+ * text for several ayahs: empty or missing ayahs extend the previous record's range.
+ */
+function buildClassicalTafsir(s: number, ayahCount: number) {
+  for (const t of CLASSICAL_TAFSIRS) {
+    const file = join(RAW_DIR, `tafsir/${t.slug}/${pad3(s)}.json`);
+    if (!existsSync(file)) {
+      errors.push(`missing ${file}; run npm run download`);
+      continue;
+    }
+    const rows = readJson<{ tafsirs: { verse_key: string; text: string }[] }>(file).tafsirs;
+    const records: TafsirRecord[] = [];
+    for (const r of rows.sort((a, b) => Number(a.verse_key.split(':')[1]) - Number(b.verse_key.split(':')[1]))) {
+      const n = Number(r.verse_key.split(':')[1]);
+      const last = records[records.length - 1];
+      if (last && n > last.to_ayah + 1) last.to_ayah = n - 1;
+      if (!r.text?.trim() && last) {
+        last.to_ayah = n;
+        continue;
+      }
+      records.push({
+        id: `${t.slug}_${s}_${n}`,
+        source: t.name,
+        author: t.author,
+        lang: t.lang,
+        from_ayah: n,
+        to_ayah: n,
+        text: r.text ?? '',
+        license_note: CLASSICAL_NOTE,
+      });
+    }
+    if (!records.length) warnings.push(`${t.slug} has no text for surah ${s}`);
+    else records[records.length - 1].to_ayah = ayahCount;
+    writeJson(`tafsir/${t.slug}/${pad3(s)}.json`, records);
+  }
 }
 
 function buildSources(tanzilNotice: string, corpusNotice: string): SourceRecord[] {
@@ -496,6 +559,19 @@ function buildSources(tanzilNotice: string, corpusNotice: string): SourceRecord[
       source_url: 'https://api.quran.com/api/v4',
       required_link: 'https://quran.com',
     },
+    ...CLASSICAL_TAFSIRS.map((t) => ({
+      id: `tafsir_${t.slug}`,
+      name: t.name,
+      author: t.author,
+      content: t.lang === 'ar' ? 'আরবি তাফসীর (মূল)' : 'বাংলা তাফসীর',
+      version: `Quran.com API v4, tafsir id ${t.id}`,
+      downloaded: downloadedOn(`tafsir/${t.slug}`),
+      license: 'Personal use only (QUL / Quran.com)',
+      license_note: CLASSICAL_NOTE,
+      source_url: 'https://qul.tarteel.ai/resources/tafsir',
+      required_link: 'https://quran.com',
+      notes: 'Downloaded through the Quran.com API because QUL file downloads need a login. Text is stored unchanged, including its HTML.',
+    })),
     {
       id: 'bn_pronunciation',
       name: 'Bangla pronunciation (উচ্চারণ)',
