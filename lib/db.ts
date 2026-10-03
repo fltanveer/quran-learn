@@ -37,6 +37,7 @@ export type ReviewCard = {
 export type Progress = { id: 'last'; surah: number; ayah: number; updated: number };
 export type StudyDay = { date: string; seconds: number };
 export type ReviewedSummary = { id: string; reviewed: 1; updated: number };
+export type PatternScore = { id: string; best: number; last: number; updated: number };
 
 export const db = new Dexie('quran-learn') as Dexie & {
   settings: EntityTable<Settings, 'id'>;
@@ -46,6 +47,7 @@ export const db = new Dexie('quran-learn') as Dexie & {
   progress: EntityTable<Progress, 'id'>;
   days: EntityTable<StudyDay, 'date'>;
   reviewedSummaries: EntityTable<ReviewedSummary, 'id'>;
+  patternScores: EntityTable<PatternScore, 'id'>;
 };
 
 db.version(1).stores({
@@ -57,6 +59,8 @@ db.version(1).stores({
   days: 'date',
   reviewedSummaries: 'id',
 });
+
+db.version(2).stores({ patternScores: 'id' });
 
 export async function getSettings(): Promise<Settings> {
   return { ...DEFAULT_SETTINGS, ...((await db.settings.get('settings')) ?? {}) };

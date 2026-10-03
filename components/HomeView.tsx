@@ -6,23 +6,23 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { db, todayKey } from '@/lib/db';
 import { L, bn } from '@/lib/bangla-labels';
 import { SettingsSheet } from './SettingsSheet';
+import { useKnown } from './useKnown';
 import type { SurahMeta } from '@/lib/types';
 
 type Props = { surahs: SurahMeta[]; wordForms: string[] };
 
 export function HomeView({ surahs, wordForms }: Props) {
   const last = useLiveQuery(() => db.progress.get('last'), []);
-  const knownRows = useLiveQuery(() => db.known.toArray(), []);
+  const known = useKnown();
   const due = useLiveQuery(() => db.cards.where('due').belowOrEqual(Date.now()).count(), []) ?? 0;
   const days = useLiveQuery(() => db.days.toArray(), []);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const closeSettings = useCallback(() => setSettingsOpen(false), []);
 
   const pct = useMemo(() => {
-    const known = new Set((knownRows ?? []).map((k) => k.ar));
     if (!wordForms.length) return 0;
     return Math.round((wordForms.filter((w) => known.has(w)).length / wordForms.length) * 100);
-  }, [knownRows, wordForms]);
+  }, [known, wordForms]);
 
   const { streak, minutesToday } = useMemo(() => studyStats(days ?? []), [days]);
 
@@ -67,10 +67,12 @@ export function HomeView({ surahs, wordForms }: Props) {
           <p className="mt-2 text-center text-sm text-muted">{L.progress}</p>
         </div>
         <div className="flex flex-col gap-4">
-          <div className="flex-1 rounded-3xl bg-card p-4 ring-1 ring-line">
+          <Link href="/review/" className="flex-1 rounded-3xl bg-card p-4 ring-1 ring-line hover:ring-accent">
             <p className="text-3xl font-semibold">{bn(due)}</p>
-            <p className="text-sm text-muted">{L.reviewsDue}</p>
-          </div>
+            <p className="text-sm text-muted">
+              {L.reviewsDue} <span className="text-accent">›</span>
+            </p>
+          </Link>
           <div className="flex-1 rounded-3xl bg-card p-4 ring-1 ring-line">
             <p className="text-3xl font-semibold">
               {bn(streak)} <span className="text-base font-normal">{L.days}</span>
@@ -81,6 +83,16 @@ export function HomeView({ surahs, wordForms }: Props) {
           </div>
         </div>
       </section>
+
+      <Link
+        href="/patterns/"
+        className="flex min-h-14 items-center justify-between rounded-2xl bg-card px-4 py-3 ring-1 ring-line hover:ring-accent"
+      >
+        <span className="font-medium">{L.patterns}</span>
+        <span lang="ar" dir="rtl" className="quran text-2xl">
+          فَاعِل · مَفْعُول
+        </span>
+      </Link>
 
       <section aria-labelledby="surahs">
         <h2 id="surahs" className="mb-3 text-lg font-semibold">
@@ -120,6 +132,10 @@ export function HomeView({ surahs, wordForms }: Props) {
             className="flex min-h-12 flex-1 items-center justify-center rounded-2xl bg-accent font-medium text-paper"
           >
             {L.continue}
+          </Link>
+          <Link href="/review/" className="flex min-h-12 items-center justify-center rounded-2xl border border-line px-4 text-sm">
+            {L.review}
+            {due > 0 && <span className="ms-1 rounded-full bg-root px-1.5 text-xs text-paper">{bn(due)}</span>}
           </Link>
           <button
             type="button"

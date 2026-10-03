@@ -4,7 +4,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { BottomSheet } from './BottomSheet';
 import { ColoredWord } from './ColoredWord';
 import { db } from '@/lib/db';
-import { addToReview } from '@/lib/fsrs';
+import { addToReview, isKnownCard } from '@/lib/fsrs';
 import { L, bn } from '@/lib/bangla-labels';
 import type { Pattern, RootEntry, Word, WordRef } from '@/lib/types';
 
@@ -35,6 +35,7 @@ export function WordCard({ ctx, onClose, roots, patterns }: Props) {
   const word = ctx?.word;
   const inReview = useLiveQuery(() => (word ? db.cards.get(word.ar) : undefined), [word?.ar]);
   const known = useLiveQuery(() => (word ? db.known.get(word.ar) : undefined), [word?.ar]);
+  const learned = inReview ? isKnownCard(inReview.card) : false;
 
   if (!ctx || !word) return null;
 
@@ -146,7 +147,7 @@ export function WordCard({ ctx, onClose, roots, patterns }: Props) {
               known ? 'border-accent bg-accent-soft text-accent' : 'border-line'
             }`}
           >
-            {known ? `✓ ${L.known}` : L.markKnown}
+            {known ? `✓ ${L.known}` : learned ? `✓ ${L.learned}` : L.markKnown}
           </button>
           <button
             type="button"

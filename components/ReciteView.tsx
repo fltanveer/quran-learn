@@ -8,6 +8,7 @@ import { WordCard, type WordContext } from './WordCard';
 import { AyahSheet } from './AyahSheet';
 import { SettingsSheet, SUPPORT_OPTIONS } from './SettingsSheet';
 import { useSettings } from './useSettings';
+import { useKnown } from './useKnown';
 import { useAyahAudio } from './useAudio';
 import { useStudyTimer } from './useStudyTimer';
 import { db, updateSettings, type PronLevel, type SupportLevel } from '@/lib/db';
@@ -25,8 +26,7 @@ type Props = {
 
 export function ReciteView({ data, roots, patterns, summaries, prev, next }: Props) {
   const settings = useSettings();
-  const knownRows = useLiveQuery(() => db.known.toArray(), []);
-  const known = useMemo(() => new Set((knownRows ?? []).map((k) => k.ar)), [knownRows]);
+  const known = useKnown();
   const notes = useLiveQuery(() => db.notes.where('surah').equals(data.surah).toArray(), [data.surah]);
   const noted = useMemo(() => new Set((notes ?? []).map((n) => n.ayah)), [notes]);
 

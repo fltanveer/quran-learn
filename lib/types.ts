@@ -107,3 +107,18 @@ export type Summary = {
   status: 'unreviewed' | 'reviewed';
   created: string;
 };
+
+/** One entry per distinct word form in scope. Built at build time for Review and Patterns. */
+export type WordIndexEntry = {
+  ar: string;
+  surah: number;
+  ayah: number;
+  pos: number;
+  meaning_bn?: string;
+  gloss_en?: string;
+  pron_bn: string;
+  root?: string;
+  pattern_id?: string;
+  segments: Segment[];
+  context: string[]; // words of the ayah where the form first appears
+};
