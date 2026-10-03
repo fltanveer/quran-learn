@@ -4,11 +4,13 @@ import type { Card } from 'ts-fsrs';
 
 export type SupportLevel = 'all' | 'new' | 'none';
 export type Theme = 'light' | 'dark' | 'system';
+export type PronLevel = 'none' | 'ayah' | 'word' | 'both';
 
 export type Settings = {
   id: 'settings';
   fontSize: number; // Arabic font size in px
   support: SupportLevel;
+  pron: PronLevel;
   theme: Theme;
   hiddenTranslations: string[];
 };
@@ -17,6 +19,7 @@ export const DEFAULT_SETTINGS: Settings = {
   id: 'settings',
   fontSize: 34,
   support: 'all',
+  pron: 'ayah',
   theme: 'system',
   hiddenTranslations: [],
 };

@@ -32,9 +32,10 @@ export function AyahSheet({ ayah, surah, tafsirRecords, summaries, onClose }: Pr
 
   return (
     <BottomSheet open onClose={onClose} title={`${L.surah} ${bn(surah)}, ${L.ayahNo} ${bn(ayah.n)}`}>
-      <p lang="ar" dir="rtl" className="quran mb-4 text-center text-3xl">
+      <p lang="ar" dir="rtl" className="quran text-center text-3xl">
         {ayah.text}
       </p>
+      <p className="mb-4 mt-1 text-center text-accent">{ayah.pron_bn}</p>
       <div role="tablist" aria-label={L.tabTranslations} className="mb-4 grid grid-cols-3 gap-1 rounded-2xl bg-accent-soft p-1">
         {tabs.map((t) => (
           <button

@@ -54,6 +54,10 @@ export function WordCard({ ctx, onClose, roots, patterns }: Props) {
           <p lang="ar" dir="rtl" className="quran pb-3 text-6xl">
             <ColoredWord segments={word.segments} />
           </p>
+          <p className="text-lg text-accent">
+            <span className="sr-only">{L.pron}: </span>
+            {word.pron_bn}
+          </p>
           {word.meaning_bn ? (
             <p className="mt-2 text-xl font-medium">{word.meaning_bn}</p>
           ) : (

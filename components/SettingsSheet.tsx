@@ -2,12 +2,19 @@
 
 import { BottomSheet } from './BottomSheet';
 import { useSettings } from './useSettings';
-import { updateSettings, type SupportLevel, type Theme } from '@/lib/db';
+import { updateSettings, type PronLevel, type SupportLevel, type Theme } from '@/lib/db';
 import { L, bn } from '@/lib/bangla-labels';
 
 export const SUPPORT_OPTIONS: { id: SupportLevel; label: string }[] = [
   { id: 'all', label: L.supportAll },
   { id: 'new', label: L.supportNew },
+  { id: 'none', label: L.supportNone },
+];
+
+const PRON_OPTIONS: { id: PronLevel; label: string }[] = [
+  { id: 'ayah', label: L.pronAyah },
+  { id: 'word', label: L.pronWord },
+  { id: 'both', label: L.pronBoth },
   { id: 'none', label: L.supportNone },
 ];
 
@@ -54,6 +61,11 @@ export function SettingsSheet({ open, onClose }: { open: boolean; onClose: () =>
     <BottomSheet open={open} onClose={onClose} title={L.settings}>
       <div className="flex flex-col gap-6">
         <Segmented label={L.support} options={SUPPORT_OPTIONS} value={s.support} onChange={(support) => updateSettings({ support })} />
+
+        <div>
+          <Segmented label={L.pron} options={PRON_OPTIONS} value={s.pron} onChange={(pron) => updateSettings({ pron })} />
+          <p className="mt-2 text-xs text-muted">{L.pronNote}</p>
+        </div>
 
         <div>
           <label htmlFor="font-size" className="mb-2 block text-sm text-muted">

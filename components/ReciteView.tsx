@@ -10,7 +10,7 @@ import { SettingsSheet, SUPPORT_OPTIONS } from './SettingsSheet';
 import { useSettings } from './useSettings';
 import { useAyahAudio } from './useAudio';
 import { useStudyTimer } from './useStudyTimer';
-import { db, updateSettings, type SupportLevel } from '@/lib/db';
+import { db, updateSettings, type PronLevel, type SupportLevel } from '@/lib/db';
 import { L, ar, bn } from '@/lib/bangla-labels';
 import type { Ayah, Pattern, RootEntry, Summary, SurahFile, SurahMeta, Word } from '@/lib/types';
 
@@ -60,6 +60,9 @@ export function ReciteView({ data, roots, patterns, summaries, prev, next }: Pro
           {data.bismillah}
         </p>
       )}
+      {data.bismillah_pron_bn && settings.pron !== 'none' && (
+        <p className="text-center text-accent">{data.bismillah_pron_bn}</p>
+      )}
 
       <ol className="mt-4 flex flex-col">
         {data.ayahs.map((a) => (
@@ -68,6 +71,7 @@ export function ReciteView({ data, roots, patterns, summaries, prev, next }: Pro
             ayah={a}
             fontSize={settings.fontSize}
             support={settings.support}
+            pron={settings.pron}
             known={known}
             hasNote={noted.has(a.n)}
             playing={audio.playing === a.n}
@@ -128,6 +132,7 @@ type RowProps = {
   ayah: Ayah;
   fontSize: number;
   support: SupportLevel;
+  pron: PronLevel;
   known: Set<string>;
   hasNote: boolean;
   playing: boolean;
@@ -137,7 +142,7 @@ type RowProps = {
   onAyah: () => void;
 };
 
-function AyahRow({ ayah, fontSize, support, known, hasNote, playing, audioError, onPlay, onWord, onAyah }: RowProps) {
+function AyahRow({ ayah, fontSize, support, pron, known, hasNote, playing, audioError, onPlay, onWord, onAyah }: RowProps) {
   const showMeaning = (w: Word) => support === 'all' || (support === 'new' && !known.has(w.ar));
   return (
     <li id={`a-${ayah.n}`} data-ayah={ayah.n} className="scroll-mt-20 border-b border-line px-3 py-4">
@@ -152,6 +157,11 @@ function AyahRow({ ayah, fontSize, support, known, hasNote, playing, audioError,
               <span className="pb-[0.2em]">
                 <ColoredWord segments={w.segments} />
               </span>
+              {(pron === 'word' || pron === 'both') && (
+                <span lang="bn" dir="ltr" className="max-w-[9rem] text-center font-bangla text-sm leading-snug text-accent">
+                  {w.pron_bn}
+                </span>
+              )}
               {showMeaning(w) && (w.meaning_bn || w.gloss_en) && (
                 <span
                   lang={w.meaning_bn ? 'bn' : 'en'}
@@ -188,6 +198,12 @@ function AyahRow({ ayah, fontSize, support, known, hasNote, playing, audioError,
           <span aria-hidden="true">{playing ? '❚❚' : '▶'}</span>
         </button>
       </div>
+      {(pron === 'ayah' || pron === 'both') && (
+        <p className="mt-2 text-lg leading-relaxed text-accent">
+          <span className="sr-only">{L.pron}: </span>
+          {ayah.pron_bn}
+        </p>
+      )}
       {audioError && <p className="mt-2 text-sm text-root">{L.audioOffline}</p>}
     </li>
   );
